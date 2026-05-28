@@ -1,12 +1,300 @@
-# NestJS Validation Notes
+# NestJS Pipes & Validation Notes
 
 Easy and beginner-friendly notes for NestJS Validation.
 
-Official Documentation: https://docs.nestjs.com/techniques/validation
+Official Documentation for Pipes: https://docs.nestjs.com/pipes
+Official Documentation for Validation: https://docs.nestjs.com/techniques/validation
 
 ---
 
-# Install Required Packages
+# 1. What are Pipes?
+
+A pipe is a class annotated with the @Injectable() decorator, which implements the PipeTransform interface. 
+
+**Main Purpose of Pipes:**
+
+- Transformation: Transform input data to the desired form (e.g., from string to integer)
+- Validation: Check if incoming data is correct (e.g., ensure email is valid, ensure age is valid)
+
+**Why Pipes are Important:**
+
+Without pipes:
+
+```bash
+@Get(':id')
+findOne(@Param('id') id: string) {
+  return this.userService.findOne(Number(id));
+}
+```
+
+You manually convert values everywhere.
+
+With pipes:
+
+```bash
+@Get(':id')
+findOne(@Param('id', ParseIntPipe) id: number) {
+  return this.userService.findOne(id);
+}
+```
+
+Cleaner.
+Safer.
+Reusable.
+
+**Request Lifecycle Position:**
+
+NestJS executes pipes before the controller method runs. If pipe validation fails, controller never executes. Nest automatically throws exceptions.
+
+```bash
+REQUEST -> MIDDLEWARE -> GUARDS -> INTERCEPTORS -> PIPES -> CONTROLLER -> SERVICE
+```
+
+# 2. Built-in Pipes
+
+Nest comes with several pipes available out-of-the-box. They're exported from the `@nestjs/common` package:
+
+- ValidationPipe
+- ParseIntPipe
+- ParseFloatPipe
+- ParseBoolPipe
+- ParseUUIDPipe
+- ParseArrayPipe
+- ParseEnumPipe
+- DefaultValuePipe
+- ParseFilePipe
+- ParseDatePipe
+
+### ParseIntPipe
+
+Converts string into integer.
+
+Example:
+
+```bash
+@Get(':id')
+findOne(
+  @Param('id', ParseIntPipe) id: number
+) {
+  console.log(typeof id); // number
+}
+```
+
+Request:
+
+```bash
+/users/5
+```
+
+id becomes: 5 from '5'
+
+If invalid:
+
+```bash
+/users/abc
+```
+
+Nest returns:
+
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (numeric string is expected)"
+}
+```
+
+**Important Points:**
+
+✅ Use when expecting numeric route params
+
+✅ Prevents invalid values reaching service layer
+
+⚠️ URL params are always strings by default
+
+⚠️ Pipe throws 400 Bad Request
+
+
+### ParseBoolPipe
+
+Converts values into boolean.
+
+Example:
+
+```bash
+@Get()
+find(@Query('active', ParseBoolPipe) active: boolean) {
+  return active;
+}
+```
+
+Request:
+
+```bash
+/users?active=true
+```
+
+Result: true from 'true'
+
+**Important Points:**
+
+✅ Accepts: `true` or `false`
+
+⚠️ Query values come as strings
+
+⚠️ Invalid boolean throws exception
+
+
+### ParseFloatPipe
+
+Converts string into float number.
+
+Example:
+
+```bash
+@Get()
+find(@Query('price', ParseFloatPipe) price: number) {
+  return price;
+}
+```
+
+**Important Points:**
+
+✅ Useful for decimal numbers. Example: 99.5
+
+⚠️ Invalid float throws 400 error
+
+### ParseUUIDPipe
+
+Validates UUID values.
+
+Example:
+
+```bash
+@Get(':id')
+findOne(
+  @Param('id', ParseUUIDPipe) id: string
+) {
+  return id;
+}
+```
+
+Valid UUID: 550e8400-e29b-41d4-a716-446655440000
+
+**Important Points:**
+
+✅ Very useful with databases
+
+✅ Prevents invalid IDs
+
+⚠️ Invalid UUID returns 400 error
+
+### ParseArrayPipe
+
+Validates arrays.
+
+Example:
+
+```bash
+@Get()
+find(
+  @Query('ids', new ParseArrayPipe({ items: Number }))
+  ids: number[],
+) {
+  return ids;
+}
+```
+
+Request:
+
+```bash
+/users?ids=1,2,3
+```
+
+Result: [1, 2, 3]
+
+**Important Points:**
+
+✅ Great for query arrays
+
+✅ Supports item validation
+
+⚠️ Configure items
+
+⚠️ Be careful with separators
+
+### ParseEnumPipe
+
+Validates enum values.
+
+Example:
+
+```bash
+enum Role {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
+@Get()
+find(
+  @Query('role', new ParseEnumPipe(Role))
+  role: Role,
+) {
+  return role;
+}
+```
+
+**Important Points:**
+
+✅ Ensures only allowed values
+
+✅ Very useful in APIs
+
+⚠️ Invalid enum throws error
+
+### DefaultValuePipe
+
+Provides default value if value is missing.
+
+Example:
+
+```bash
+@Get()
+find(
+  @Query('page', new DefaultValuePipe(1), ParseIntPipe)
+  page: number,
+) {
+  return page;
+}
+```
+
+Request:
+
+```bash
+/users
+```
+
+Result: 1
+
+** Important Points:**
+
+✅ Great for pagination
+
+✅ Often combined with ParseIntPipe
+
+⚠️ Order matters
+
+Correct:
+
+DefaultValuePipe → ParseIntPipe
+
+---
+
+# 3. ValidationPipe
+
+This is the MOST IMPORTANT built-in pipe in NestJS. Used with DTOs and class-validator package.
+
+
+### Install Required Packages
 
 ```bash
 npm install class-validator class-transformer
@@ -19,26 +307,8 @@ These packages are required for validation in NestJS.
 | class-validator | Validation decorators |
 | class-transformer | Transform plain objects into DTO classes |
 
----
 
-# What is Validation?
-
-Validation checks incoming request data before processing it.
-
-Example:
-
-```json
-{
-  "email": "wrong-email",
-  "password": ""
-}
-```
-
-NestJS can automatically reject invalid requests.
-
----
-
-# What is DTO?
+## What is DTO?
 
 DTO = Data Transfer Object
 
@@ -48,19 +318,6 @@ A DTO defines:
 - validation rules
 
 Example:
-
-```ts
-export class CreateUserDto {
-  email: string;
-  password: string;
-}
-```
-
----
-
-# Basic Validation Example
-
-## Create DTO
 
 ```ts
 import { IsEmail, IsNotEmpty } from 'class-validator';
@@ -74,7 +331,6 @@ export class CreateUserDto {
 }
 ```
 
----
 
 ## Use DTO in Controller
 
@@ -85,9 +341,8 @@ create(@Body() dto: CreateUserDto) {
 }
 ```
 
----
 
-# Enable ValidationPipe
+## Enable ValidationPipe
 
 Inside `main.ts`
 
@@ -106,9 +361,8 @@ bootstrap();
 
 This enables validation globally.
 
----
 
-# Validation Error Example
+## Validation Error Example
 
 Request:
 
@@ -132,20 +386,9 @@ Response:
 }
 ```
 
----
+## DTO Validation 
 
-# Validation Types Summary
-
-NestJS validation mainly uses:
-
-- Validation decorators
-- ValidationPipe
-- Parse Pipes
-- DTO validation
-
----
-
-# 1. String Validation
+### 1. String Validation
 
 Used for text fields.
 
@@ -174,9 +417,8 @@ username: string;
 phone: string;
 ```
 
----
 
-# 2. Email Validation
+### 2. Email Validation
 
 ```ts
 @IsEmail()
@@ -185,9 +427,8 @@ email: string;
 
 Checks valid email format.
 
----
 
-# 3. Number Validation
+### 3. Number Validation
 
 ```ts
 @IsNumber()
@@ -209,18 +450,16 @@ quantity: number;
 score: number;
 ```
 
----
 
-# 4. Boolean Validation
+### 4. Boolean Validation
 
 ```ts
 @IsBoolean()
 isAdmin: boolean;
 ```
 
----
 
-# 5. Date Validation
+### 5. Date Validation
 
 ```ts
 @IsDate()
@@ -240,9 +479,8 @@ Example:
 }
 ```
 
----
 
-# 6. Array Validation
+### 6. Array Validation
 
 ```ts
 @IsArray()
@@ -255,9 +493,8 @@ tags: string[];
 tags: string[];
 ```
 
----
 
-# 7. Enum Validation
+### 7. Enum Validation
 
 ```ts
 enum Role {
@@ -271,45 +508,40 @@ enum Role {
 role: Role;
 ```
 
----
 
-# 8. Optional Fields
+### 8. Optional Fields
 
 ```ts
 @IsOptional()
 bio?: string;
 ```
 
----
 
-# 9. URL Validation
+### 9. URL Validation
 
 ```ts
 @IsUrl()
 website: string;
 ```
 
----
 
-# 10. UUID Validation
+### 10. UUID Validation
 
 ```ts
 @IsUUID()
 id: string;
 ```
 
----
 
-# 11. Phone Number Validation
+### 11. Phone Number Validation
 
 ```ts
 @IsPhoneNumber()
 phone: string;
 ```
 
----
 
-# 12. Nested Object Validation
+### 12. Nested Object Validation
 
 ```ts
 export class AddressDto {
@@ -326,9 +558,8 @@ export class UserDto {
 }
 ```
 
----
 
-# 13. Custom Validation
+### 13. Custom Validation
 
 ```ts
 @IsStrongPassword()
@@ -337,51 +568,15 @@ password: string;
 
 You can also create your own custom validators.
 
----
 
-# 14. Route Param Validation
+### 14. Route Param Validation
 
 ```ts
 @IsNumberString()
 id: string;
 ```
 
----
-
-# 15. Parse Pipes Validation
-
-## ParseIntPipe
-
-```ts
-@Param('id', ParseIntPipe) id: number
-```
-
----
-
-## ParseBoolPipe
-
-```ts
-@Query('active', ParseBoolPipe) active: boolean
-```
-
----
-
-## ParseArrayPipe
-
-```ts
-@Query(
-  'ids',
-  new ParseArrayPipe({
-    items: Number,
-    separator: ',',
-  }),
-)
-ids: number[]
-```
-
----
-
-# Most Common Validation Decorators
+### Most Common Validation Decorators
 
 | Decorator | Purpose |
 |---|---|
@@ -398,9 +593,8 @@ ids: number[]
 | @IsUUID() | UUID validation |
 | @IsUrl() | URL validation |
 
----
 
-# Recommended ValidationPipe Setup
+## Recommended ValidationPipe Setup
 
 ```ts
 app.useGlobalPipes(
@@ -415,7 +609,7 @@ app.useGlobalPipes(
 
 ---
 
-# whitelist
+### whitelist
 
 ```ts
 whitelist: true
@@ -435,9 +629,8 @@ Request:
 
 If `role` is not inside DTO, it gets removed.
 
----
 
-# forbidNonWhitelisted
+### forbidNonWhitelisted
 
 ```ts
 forbidNonWhitelisted: true
@@ -455,9 +648,8 @@ Error:
 }
 ```
 
----
 
-# transform
+### transform
 
 ```ts
 transform: true
@@ -486,9 +678,43 @@ With transform:
 number
 ```
 
----
 
-# Validate Route Parameters
+### disableErrorMessages
+
+```ts
+new ValidationPipe({
+  disableErrorMessages: true,
+})
+```
+
+Hides detailed errors.
+
+Useful in production.
+
+
+### stopAtFirstError
+
+```ts
+new ValidationPipe({
+  stopAtFirstError: true,
+})
+```
+
+Stops validation after first error.
+
+
+### skipMissingProperties
+
+```ts
+new ValidationPipe({
+  skipMissingProperties: true,
+})
+```
+
+Useful for PATCH requests.
+
+
+## Validate Route Parameters
 
 DTO:
 
@@ -512,119 +738,84 @@ findOne(@Param() params: FindOneParams) {
 
 ---
 
-# ParseIntPipe
+# 4. Pip Binding Levels
+
+Pipes can be used in multiple places. At parameter level, controller level and method level.
+
+### i. Parameter Level
 
 ```ts
 @Get(':id')
-findOne(
-  @Param('id', ParseIntPipe) id: number,
-) {
-  return id;
+async findOne(@Param('id', ParseIntPipe) id: number) {
+  return this.catsService.findOne(id);
 }
 ```
 
-Ensures `id` is a valid number.
+Only affects one parameter.
+
+### ii. Method Level
+@UsePipes(ValidationPipe)
+@Post()
+create()
+
+Affects entire method.
+
+### iii. Controller Level
+@UsePipes(ValidationPipe)
+@Controller('users')
+
+Affects all routes in controller.
+
+Global Level
+app.useGlobalPipes()
+
+Affects entire application.
 
 ---
 
-# ParseBoolPipe
+# 5. Custom Pipes
+
+You can create your own pipe.
 
 ```ts
-@Get()
-findAll(
-  @Query('active', ParseBoolPipe) active: boolean,
-) {
-  return active;
+import {
+  PipeTransform,
+  Injectable,
+  BadRequestException,
+} from '@nestjs/common';
+
+@Injectable()
+export class UppercasePipe
+  implements PipeTransform {
+
+  transform(value: any) {
+
+    if (!value) {
+      throw new BadRequestException(
+        'Value is required',
+      );
+    }
+
+    return value.toUpperCase();
+  }
 }
 ```
 
-Request:
+Input
 
 ```bash
-/users?active=true
+Ali
 ```
 
-Result:
-
-```ts
-true
-```
-
----
-
-# ParseArrayPipe
-
-```ts
-@Get()
-findByIds(
-  @Query(
-    'ids',
-    new ParseArrayPipe({
-      items: Number,
-      separator: ',',
-    }),
-  )
-  ids: number[],
-) {
-  return ids;
-}
-```
-
-Request:
+Output
 
 ```bash
-/users?ids=1,2,3
-```
-
-Result:
-
-```ts
-[1, 2, 3]
+ALI
 ```
 
 ---
 
-# ValidationPipe Options
-
-## disableErrorMessages
-
-```ts
-new ValidationPipe({
-  disableErrorMessages: true,
-})
-```
-
-Hides detailed errors.
-
-Useful in production.
-
----
-
-## stopAtFirstError
-
-```ts
-new ValidationPipe({
-  stopAtFirstError: true,
-})
-```
-
-Stops validation after first error.
-
----
-
-## skipMissingProperties
-
-```ts
-new ValidationPipe({
-  skipMissingProperties: true,
-})
-```
-
-Useful for PATCH requests.
-
----
-
-# Mapped Types
+# 6. Mapped Types
 
 Install:
 
