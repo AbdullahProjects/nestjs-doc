@@ -59,14 +59,16 @@ Nest comes with several pipes available out-of-the-box. They're exported from th
 - ParseFilePipe
 - ParseDatePipe
 
+--- 
+
 ### ParseIntPipe
 
 Converts string into integer.
 
 Example:
 
-```bash
-@Get(':id')
+```ts
+@Get('users/:id')
 findOne(
   @Param('id', ParseIntPipe) id: number
 ) {
@@ -107,6 +109,7 @@ Nest returns:
 
 ⚠️ Pipe throws 400 Bad Request
 
+---
 
 ### ParseBoolPipe
 
@@ -114,8 +117,8 @@ Converts values into boolean.
 
 Example:
 
-```bash
-@Get()
+```ts
+@Get('users')
 find(@Query('active', ParseBoolPipe) active: boolean) {
   return active;
 }
@@ -137,6 +140,7 @@ Result: true from 'true'
 
 ⚠️ Invalid boolean throws exception
 
+---
 
 ### ParseFloatPipe
 
@@ -144,7 +148,7 @@ Converts string into float number.
 
 Example:
 
-```bash
+```ts
 @Get()
 find(@Query('price', ParseFloatPipe) price: number) {
   return price;
@@ -157,13 +161,15 @@ find(@Query('price', ParseFloatPipe) price: number) {
 
 ⚠️ Invalid float throws 400 error
 
+--- 
+
 ### ParseUUIDPipe
 
 Validates UUID values.
 
 Example:
 
-```bash
+```ts
 @Get(':id')
 findOne(
   @Param('id', ParseUUIDPipe) id: string
@@ -182,13 +188,15 @@ Valid UUID: 550e8400-e29b-41d4-a716-446655440000
 
 ⚠️ Invalid UUID returns 400 error
 
+---
+
 ### ParseArrayPipe
 
 Validates arrays.
 
 Example:
 
-```bash
+```ts
 @Get()
 find(
   @Query('ids', new ParseArrayPipe({ items: Number }))
@@ -216,13 +224,15 @@ Result: [1, 2, 3]
 
 ⚠️ Be careful with separators
 
+--- 
+
 ### ParseEnumPipe
 
 Validates enum values.
 
 Example:
 
-```bash
+```ts
 enum Role {
   ADMIN = 'admin',
   USER = 'user',
@@ -245,13 +255,15 @@ find(
 
 ⚠️ Invalid enum throws error
 
+---
+
 ### DefaultValuePipe
 
 Provides default value if value is missing.
 
 Example:
 
-```bash
+```ts
 @Get()
 find(
   @Query('page', new DefaultValuePipe(1), ParseIntPipe)
