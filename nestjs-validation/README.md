@@ -9,40 +9,34 @@ Official Documentation for Validation: https://docs.nestjs.com/techniques/valida
 
 # 1. What are Pipes?
 
-A pipe is a class annotated with the @Injectable() decorator, which implements the PipeTransform interface. 
+In NestJS, a Pipe is a feature used to validate and transform incoming request data (client data) before it reaches the controller method.
 
-**Main Purpose of Pipes:**
+### Main Purpose of Pipes:
 
-- Transformation: Transform input data to the desired form (e.g., from string to integer)
-- Validation: Check if incoming data is correct (e.g., ensure email is valid, ensure age is valid)
+- **Transformation**: Transform input data to the desired form (e.g., from string to integer)
+- **Validation**: Check if incoming data is correct (e.g., ensure email is valid, ensure age is valid)
 
-**Why Pipes are Important:**
+### Why Pipes are Important:
 
-Without pipes:
+Without pipes, we need to manually convert incoming request data into the required type inside the controller method. For example, route parameters are received as strings, so we use functions like Number(id) to convert them into numbers before passing them to the service.
 
-```bash
+```ts
 @Get(':id')
 findOne(@Param('id') id: string) {
   return this.userService.findOne(Number(id));
 }
 ```
 
-You manually convert values everywhere.
+With pipes, NestJS automatically validates and transforms incoming request data before it reaches the controller method. In the example above, ParseIntPipe automatically converts the id from a string into a number and also throws an error if the value is invalid. This makes the code cleaner, safer, and easier to maintain.
 
-With pipes:
-
-```bash
+```ts
 @Get(':id')
 findOne(@Param('id', ParseIntPipe) id: number) {
   return this.userService.findOne(id);
 }
 ```
 
-Cleaner.
-Safer.
-Reusable.
-
-**Request Lifecycle Position:**
+### Request Lifecycle Position:
 
 NestJS executes pipes before the controller method runs. If pipe validation fails, controller never executes. Nest automatically throws exceptions.
 
