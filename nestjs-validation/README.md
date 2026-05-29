@@ -80,7 +80,7 @@ findOne(
 Request:
 
 ```bash
-/users/5
+GET /users/5
 ```
 
 **Result**: id will transform into 5 integer data type from '5' string type.
@@ -88,7 +88,7 @@ Request:
 Invalid Request:
 
 ```bash
-/users/abc
+GET /users/abc
 ```
 
 Nest returns:
@@ -119,7 +119,7 @@ find(@Query('active', ParseBoolPipe) active: boolean) {
 Request:
 
 ```bash
-/users?active=true
+GET /users?active=true
 ```
 
 **Result**: active query parameter transfrom into true boolean data type from 'true' string.
@@ -127,7 +127,7 @@ Request:
 Invalid Request:
 
 ```bash
-/users?active=hello
+GET /users?active=hello
 ```
 
 Nest returns:
@@ -157,7 +157,7 @@ find(@Query('price', ParseFloatPipe) price: number) {
 Request:
 
 ```bash
-/users?price=5.5
+GET /users?price=5.5
 ```
 
 **Result**: `price` will transform into 5.5 float data type from '5.5' string type.
@@ -165,7 +165,7 @@ Request:
 Invalid Request:
 
 ```bash
-/users?price=abc
+GET /users?price=abc
 ```
 
 Nest returns:
