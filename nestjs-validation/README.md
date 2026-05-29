@@ -1,8 +1,9 @@
 # NestJS Pipes & Validation Notes
 
-Easy and beginner-friendly notes for NestJS Validation.
+Easy and beginner-friendly notes for NestJS Validation. If you want to check official documentation, visit the following pages below:
 
 Official Documentation for Pipes: https://docs.nestjs.com/pipes
+
 Official Documentation for Validation: https://docs.nestjs.com/techniques/validation
 
 ---
@@ -48,22 +49,22 @@ REQUEST -> MIDDLEWARE -> GUARDS -> INTERCEPTORS -> PIPES -> CONTROLLER -> SERVIC
 
 Nest comes with several pipes available out-of-the-box. They're exported from the `@nestjs/common` package:
 
-- ValidationPipe
-- ParseIntPipe
-- ParseFloatPipe
-- ParseBoolPipe
-- ParseUUIDPipe
-- ParseArrayPipe
-- ParseEnumPipe
-- DefaultValuePipe
-- ParseFilePipe
-- ParseDatePipe
+- i. ParseIntPipe
+- ii. ParseFloatPipe
+- iii. ParseBoolPipe
+- iv. ParseUUIDPipe
+- v. ParseArrayPipe
+- vi. ParseEnumPipe
+- vii. DefaultValuePipe
+- viii. ParseFilePipe
+- ix. ParseDatePipe
+- x. ValidationPipe
 
 --- 
 
-### ParseIntPipe
+### i. ParseIntPipe
 
-Converts string into integer.
+ParseIntPipe is a built-in pipe that converts a string into an integer and also validates it.
 
 Example:
 
@@ -82,9 +83,9 @@ Request:
 /users/5
 ```
 
-id becomes: 5 from '5'
+**Result**: id will transform into 5 integer data type from '5' string type.
 
-If invalid:
+Invalid Request:
 
 ```bash
 /users/abc
@@ -99,21 +100,12 @@ Nest returns:
 }
 ```
 
-**Important Points:**
-
-✅ Use when expecting numeric route params
-
-✅ Prevents invalid values reaching service layer
-
-⚠️ URL params are always strings by default
-
-⚠️ Pipe throws 400 Bad Request
 
 ---
 
-### ParseBoolPipe
+### ii. ParseBoolPipe
 
-Converts values into boolean.
+In NestJS, ParseBoolPipe is a built-in pipe that converts string values into boolean (true or false) and validates them.
 
 Example:
 
@@ -130,47 +122,71 @@ Request:
 /users?active=true
 ```
 
-Result: true from 'true'
+**Result**: active query parameter transfrom into true boolean data type from 'true' string.
 
-**Important Points:**
+Invalid Request:
 
-✅ Accepts: `true` or `false`
+```bash
+/users?active=hello
+```
 
-⚠️ Query values come as strings
+Nest returns:
 
-⚠️ Invalid boolean throws exception
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (boolean string is expected)"
+}
+```
 
 ---
 
-### ParseFloatPipe
+### iii. ParseFloatPipe
 
-Converts string into float number.
+In NestJS, ParseBoolPipe is a built-in pipe that converts string values into float number and validates them.
 
 Example:
 
 ```ts
-@Get()
+@Get('users')
 find(@Query('price', ParseFloatPipe) price: number) {
   return price;
 }
 ```
 
-**Important Points:**
+Request:
 
-✅ Useful for decimal numbers. Example: 99.5
+```bash
+/users?price=5.5
+```
 
-⚠️ Invalid float throws 400 error
+**Result**: `price` will transform into 5.5 float data type from '5.5' string type.
+
+Invalid Request:
+
+```bash
+/users?price=abc
+```
+
+Nest returns:
+
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (numeric string is expected)"
+}
+```
 
 --- 
 
-### ParseUUIDPipe
+### iv. ParseUUIDPipe
 
-Validates UUID values.
+ParseUUIDPipe validates whether the value is a valid UUID.
 
 Example:
 
 ```ts
-@Get(':id')
+@Get('users/:id')
 findOne(
   @Param('id', ParseUUIDPipe) id: string
 ) {
@@ -178,26 +194,41 @@ findOne(
 }
 ```
 
-Valid UUID: 550e8400-e29b-41d4-a716-446655440000
+Valid UUID: 550e8400-e29b-41d4-a716-446655440000  
 
-**Important Points:**
+Request:
 
-✅ Very useful with databases
+```bash
+GET /users/550e8400-e29b-41d4-a716-446655440000
+```
 
-✅ Prevents invalid IDs
+**Result**: Valid UUID is returned as it is.
 
-⚠️ Invalid UUID returns 400 error
+Invalid Request:
+
+```bash
+GET /users/12345
+```
+
+Nest returns:
+
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (uuid is expected)"
+}
+```
 
 ---
 
-### ParseArrayPipe
+### v. ParseArrayPipe
 
-Validates arrays.
+ParseArrayPipe validates and transforms comma-separated values into arrays.
 
 Example:
 
 ```ts
-@Get()
+@Get('users')
 find(
   @Query('ids', new ParseArrayPipe({ items: Number }))
   ids: number[],
@@ -209,26 +240,31 @@ find(
 Request:
 
 ```bash
-/users?ids=1,2,3
+GET /users?ids=1,2,3
 ```
 
-Result: [1, 2, 3]
+**Result**: "1,2,3" (string) → [1, 2, 3] (array)
 
-**Important Points:**
+Invalid Request:
 
-✅ Great for query arrays
+```bash
+GET /users?ids=a,b,c
+```
 
-✅ Supports item validation
+Nest returns:
 
-⚠️ Configure items
-
-⚠️ Be careful with separators
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (numeric string is expected)"
+}
+```
 
 --- 
 
-### ParseEnumPipe
+### vi. ParseEnumPipe
 
-Validates enum values.
+ParseEnumPipe validates whether a value exists in a user defined enum.
 
 Example:
 
@@ -238,7 +274,7 @@ enum Role {
   USER = 'user',
 }
 
-@Get()
+@Get('users')
 find(
   @Query('role', new ParseEnumPipe(Role))
   role: Role,
@@ -247,24 +283,39 @@ find(
 }
 ```
 
-**Important Points:**
+Request:
 
-✅ Ensures only allowed values
+```bash
+GET /users?role=admin
+```
 
-✅ Very useful in APIs
+**Result**: "admin" is accepted
 
-⚠️ Invalid enum throws error
+Invalid Request:
+
+```bash
+GET /users?role=manager
+```
+
+Nest returns:
+
+```bash
+{
+  "statusCode": 400,
+  "message": "Validation failed (enum string is expected)"
+}
+```
 
 ---
 
 ### DefaultValuePipe
 
-Provides default value if value is missing.
+DefaultValuePipe provides a default value when no value is provided.
 
 Example:
 
 ```ts
-@Get()
+@Get('users')
 find(
   @Query('page', new DefaultValuePipe(1), ParseIntPipe)
   page: number,
@@ -276,22 +327,18 @@ find(
 Request:
 
 ```bash
-/users
+GET /users
 ```
 
-Result: 1
+**Result**: No value provided → page = 1
 
-** Important Points:**
+Request with value:
 
-✅ Great for pagination
+```bash
+GET /users?page=5
+```
 
-✅ Often combined with ParseIntPipe
-
-⚠️ Order matters
-
-Correct:
-
-DefaultValuePipe → ParseIntPipe
+**Result**: "5" (string) → 5 (number)
 
 ---
 

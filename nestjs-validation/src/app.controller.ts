@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, DefaultValuePipe, ParseIntPipe, ParseBoolPipe, ParseFloatPipe, ParseUUIDPipe, ParseArrayPipe, ParseEnumPipe } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -6,7 +6,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  findOne(@Param('value', new DefaultValuePipe(false), ParseBoolPipe) value: Boolean): string {
+    return `The passed parameter is: ${value}`;
   }
 }
