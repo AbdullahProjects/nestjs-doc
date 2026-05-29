@@ -5,8 +5,8 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  findOne(@Param('value', new DefaultValuePipe(false), ParseBoolPipe) value: Boolean): string {
-    return `The passed parameter is: ${value}`;
+  @Get(':id/:name')
+  findOne(@Param() params: object): string {
+    return `The passed parameters are: ${params}`;
   }
 }

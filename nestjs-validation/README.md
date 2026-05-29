@@ -807,20 +807,29 @@ async findOne(@Param('id', ParseIntPipe) id: number) {
 Only affects one parameter.
 
 ### ii. Method Level
+
+```ts
 @UsePipes(ValidationPipe)
 @Post()
 create()
+```
 
 Affects entire method.
 
 ### iii. Controller Level
+
+```ts
 @UsePipes(ValidationPipe)
 @Controller('users')
+```
 
 Affects all routes in controller.
 
 Global Level
-app.useGlobalPipes()
+
+```ts
+app.useGlobalPipes(new ValidationPipe())
+```
 
 Affects entire application.
 
